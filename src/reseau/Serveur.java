@@ -117,7 +117,7 @@ public class Serveur implements Runnable {
             String messageDebut = "/d/";
             this.envoyer(messageDebut.getBytes());
 
-            // Envoi du packet de début de jeu si c'est au serveur de commencer
+            // Envoi des positions s'il s'agit du serveur qui commence à jouer
             String messagePosition = "/p/" + donnees;
             this.envoyer(messagePosition.getBytes());
 
@@ -157,12 +157,27 @@ public class Serveur implements Runnable {
 
                 // Si une fois que le serveur a joué la partie est considérée comme terminée alors envoyer un message au client
                 if(this.morpion.estFiniePartie()){
-                    messageFinPartie = "/f/" + this.morpion.getVainqueur().getPseudo();
+
+                    if(this.morpion.getVainqueur().getPseudo() == null)
+                        messageFinPartie = "/f/" + "egalite";
+                    else {
+                        // On applique l'autre joueur comme vainqueur étant donné que le partie se termine lorsque le joueur précédent a gagné
+                        this.morpion.setVainqueur(this.morpion.getJoueurs().getAutreJoueur(this.morpion.getVainqueur()));
+                        messageFinPartie = "/f/" + this.morpion.getVainqueur().getPseudo();
+                    }
+
                     this.envoyer(messageFinPartie.getBytes());
                 }
             }
             else{
-                messageFinPartie = "/f/" + this.morpion.getVainqueur().getPseudo();
+                if(this.morpion.getVainqueur().getPseudo() == null)
+                    messageFinPartie = "/f/" + "egalite";
+                else {
+                    // On applique l'autre joueur comme vainqueur étant donné que le partie se termine lorsque le joueur précédent a gagné
+                    this.morpion.setVainqueur(this.morpion.getJoueurs().getAutreJoueur(this.morpion.getVainqueur()));
+                    messageFinPartie = "/f/" + this.morpion.getVainqueur().getPseudo();
+                }
+
                 this.envoyer(messageFinPartie.getBytes());
             }
         }

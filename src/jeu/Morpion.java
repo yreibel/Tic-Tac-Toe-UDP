@@ -207,6 +207,14 @@ public class Morpion {
     }
 
     /**
+     * Applique le joueur vainqueur de la partie
+     * @param joueur
+     */
+    public void setVainqueur(Joueur joueur){
+        this.vainqueur = joueur;
+    }
+
+    /**
      * Retourne les joueurs de la partie
      * @return PaireJoueurs
      */

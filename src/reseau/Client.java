@@ -114,7 +114,6 @@ public class Client implements Runnable {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-
     }
 
     @Override
