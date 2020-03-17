@@ -148,10 +148,15 @@ public class Client implements Runnable {
         if(message.startsWith("/d/")){
             this.debutPartieClient();
         }
+
         // Réception la position du symbole
         if(message.startsWith("/p/")){
-            this.traitementPositionPacket(messageSansControle);
+            // Si la position reçu ne contient pas de coordonnées alors ne rien faire du packet reçu.
+            if(messageSansControle.contains(",")) {
+                this.traitementPositionPacket(messageSansControle);
+            }
         }
+
         // Reçoit un message d'erreur
         if(message.startsWith("/e/")){
             System.out.println("Impossible de cliquer ici !");

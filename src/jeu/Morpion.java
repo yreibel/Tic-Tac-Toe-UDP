@@ -238,4 +238,11 @@ public class Morpion {
         return this.vainqueur;
     }
 
+    /**
+     * Augmente le nombre de coups joués
+     */
+    public void augmenterNombreCoups(){
+        this.nbCoups++;
+    }
+
 }

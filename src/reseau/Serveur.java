@@ -89,7 +89,6 @@ public class Serveur implements Runnable {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
-
                     // Traite le packet reçu
                     traiterPacket(packet);
                 }
@@ -108,46 +107,73 @@ public class Serveur implements Runnable {
 
         // Réception du packet de connexion
         if(messageRecu.startsWith("/c/")){
+            // Ajout du client à la liste
             Joueur j = new Joueur(messageRecu.substring(3), packet.getAddress(), packet.getPort());
             listeClients.add(j);
 
             // Commence la partie contre le serveur lorsque le joueur rejoint la partie
-            this.commencerJeuContreServeur(j);
+            String donnees = this.commencerJeuContreServeur(j);
+            // Envoi du packet de début de partie
             String messageDebut = "/d/";
             this.envoyer(messageDebut.getBytes());
 
+            // Envoi du packet de début de jeu si c'est au serveur de commencer
+            String messagePosition = "/p/" + donnees;
+            this.envoyer(messagePosition.getBytes());
+
         }
+
         // Réception packet position
         if(messageRecu.startsWith("/p/")){
+            this.actionPositionServeur(packet, messageSansControle);
+        }
 
-           if(this.morpion.estValideEmplacement(messageSansControle)){
-                char symbole = this.getSymboleJoueur(packet.getAddress(), packet.getPort());
-                this.traitementPositionPacket(messageSansControle, symbole);
-                // Symbole correspondant au joueur
 
-                String messagePosition = "/p/" + symbole + ":" + messageSansControle;
+    }
+
+    /**
+     * Action lorsqu'un packet contenant la position est reçue
+     * @param packet
+     * @param messageSansControle
+     */
+    public void actionPositionServeur(DatagramPacket packet, String messageSansControle){
+
+        if(this.morpion.estValideEmplacement(messageSansControle)){
+            String messagePosition;
+            String messageFinPartie;
+
+            char symbole = this.getSymboleJoueur(packet.getAddress(), packet.getPort());
+            this.traitementPositionPacket(messageSansControle, symbole);
+            // Symbole correspondant au joueur
+            messagePosition = "/p/" + symbole + ":" + messageSansControle;
+            this.envoyer(messagePosition.getBytes());
+
+            // Serveur joue
+            if(!this.morpion.estFiniePartie()){
+
+                String donnees = this.serveurJoue();
+                messagePosition = "/p/" + donnees;
                 this.envoyer(messagePosition.getBytes());
 
-                // Serveur joue
-                if(!this.morpion.estFiniePartie()){
-                    String donnees = this.serveurJoue();
-                    messagePosition = "/p/" + donnees;
-                    this.envoyer(messagePosition.getBytes());
+                // Si une fois que le serveur a joué la partie est considérée comme terminée alors envoyer un message au client
+                if(this.morpion.estFiniePartie()){
+                    messageFinPartie = "/f/" + this.morpion.getVainqueur().getPseudo();
+                    this.envoyer(messageFinPartie.getBytes());
                 }
-                else{
-                    String messageFinpartie = "/f/" + this.morpion.getVainqueur().getPseudo();
-                    this.envoyer(messageFinpartie.getBytes());
-                }
-
             }
             else{
-                String messageInvalide = "/e/" + "impo";
-                // Envoi au client que l'emplacement souhaité est invalide
-                this.envoyer(messageInvalide.getBytes());
-
+                messageFinPartie = "/f/" + this.morpion.getVainqueur().getPseudo();
+                this.envoyer(messageFinPartie.getBytes());
             }
         }
+        else{
+            String messageInvalide = "/e/" + "impo";
+            // Envoi au client que l'emplacement souhaité est invalide
+            this.envoyer(messageInvalide.getBytes());
+        }
     }
+
+
 
     /**
      * Ajoute le symbole reçu par le joueur sur le plateau de jeu associé au serveur
@@ -160,9 +186,11 @@ public class Serveur implements Runnable {
         int j = Integer.parseInt(position[1].trim());
         int i = Integer.parseInt(position[0]);
 
+        // Applique le jeu au serveur
         this.morpion.placerPion(i, j, symbole);
+        this.morpion.augmenterNombreCoups();
+        this.morpion.setJoueurEnCours(this.morpion.getJoueurs().getAutreJoueur(this.morpion.getJoueurEnCours()));
     }
-
 
 
     /**
@@ -185,11 +213,19 @@ public class Serveur implements Runnable {
     /**
      * Commence la partie contre le serveur
      */
-    public void commencerJeuContreServeur(Joueur joueurReel){
+    public String commencerJeuContreServeur(Joueur joueurReel){
         Joueur ordinateur = new Joueur();
         PaireJoueurs paireJoueurs = new PaireJoueurs(joueurReel, ordinateur);
 
         this.morpion = new Morpion(paireJoueurs);
+
+        // test
+
+        if(this.morpion.getJoueurEnCours() == this.morpion.getJoueurs().getJoueur2()){
+           return this.serveurJoue();
+        }else{
+            return "";
+        }
     }
 
     /**
@@ -197,23 +233,23 @@ public class Serveur implements Runnable {
      * @return String
      */
     public String serveurJoue(){
-
         int i = (int)(Math.random() * 3);
         int j = (int)(Math.random() * 3);
         String pos = i + "," + j;
-        System.out.println("position tirée : " + i + ":" + j);
-        while(!this.morpion.estValideEmplacement(pos)){
 
+        while(!this.morpion.estValideEmplacement(pos)){
             i = (int)(Math.random() * 3);
             j = (int)(Math.random() * 3);
             pos = i + "," + j;
-            System.out.println("position tirée : " + i + ":" + j);
         }
 
-
         char symbole =  this.morpion.getJoueurs().getJoueur2().getSymboleJoue().getCharSymbole();
-        this.morpion.placerPion(i, j, symbole);
 
+        this.morpion.placerPion(i, j, symbole);
+        this.morpion.setJoueurEnCours(this.morpion.getJoueurs().getAutreJoueur(this.morpion.getJoueurEnCours()));
+        this.morpion.augmenterNombreCoups();
+
+        // Retourne l'information sous forme de chaîne
         return symbole + ":" + pos;
     }
 

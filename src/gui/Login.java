@@ -85,13 +85,14 @@ public class Login extends JFrame {
         this.panelSaisie.add(this.lblPort);
         this.panelSaisie.add(this.txtPort);
 
-
         this.panelLogin.add(this.btnLogin);
         this.panelLogin.add(this.lblLogin);
 
         this.add(this.panelSaisie);
         this.add(this.panelLogin);
 
+        this.setDefaultCloseOperation(EXIT_ON_CLOSE);
+        this.setLocationRelativeTo(null);
         this.setVisible(true);
 
     }
