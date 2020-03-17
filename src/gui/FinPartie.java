@@ -20,11 +20,6 @@ public class FinPartie extends JFrame {
      */
     public FinPartie(String vainqueur){
         super("Fin de la partie");
-        /*if(this.vainqueur != null){
-            this.vainqueur = vainqueur;
-        }else{
-            this.vainqueur = "Egalité";
-        }*/
 
         this.vainqueur = vainqueur;
 
