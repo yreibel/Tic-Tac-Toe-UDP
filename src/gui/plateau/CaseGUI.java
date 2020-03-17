@@ -8,6 +8,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.net.URL;
 
 /**
  * Classe CaseGUI
@@ -41,7 +42,8 @@ public class CaseGUI extends JButton implements ActionListener {
      */
     public void remplacerImage(String img){
         try {
-            Image image = ImageIO.read(getClass().getResource("../../" + img + ".png"));
+            URL imageUrl = ClassLoader.getSystemResource(img + ".png");
+            Image image = ImageIO.read(imageUrl);
             this.setIcon(new ImageIcon(image));
         } catch (Exception ex) {
             System.out.println(ex);
@@ -81,30 +83,9 @@ public class CaseGUI extends JButton implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        /*if(e.getSource() == this){
-           // this.aCase.getPlateau().getMorpion().getJoueurs().
-            if(!this.aCase.getPlateau().getMorpion().estFiniePartie()){
-
-                    Joueur joueur = this.aCase.getPlateau().getMorpion().getJoueurEnCours();
-                    this.placerSymbole(joueur.getSymboleJoue());
-
-                    if(this.aCase.getPlateau().getMorpion().estFiniePartie()){
-                        System.out.println("finie");
-                        this.aCase.getPlateau().getPlateauGUI().dispose();
-                        new FinPartie(this.aCase.getPlateau().getMorpion().getJoueurs());
-                    }
-
-                    Joueur prochainJoueur = this.aCase.getPlateau().getMorpion().getJoueurs().getAutreJoueur(joueur);
-                    this.aCase.getPlateau().getMorpion().setJoueurEnCours(prochainJoueur);
-
-            }
-            else{
-                this.aCase.getPlateau().getPlateauGUI().dispose();
-                new FinPartie(this.aCase.getPlateau().getMorpion().getJoueurs());
-            }
-        }*/
 
         String message = "/p/" + this.getX1() + "," + this.getY1();
+        System.out.println("poseee");
         this.plateauGUI.getClient().envoyer(message.getBytes());
     }
 }

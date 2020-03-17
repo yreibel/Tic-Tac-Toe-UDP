@@ -47,6 +47,7 @@ public class Serveur implements Runnable {
         }
         this.lancement = new Thread(this, "Serveur");
         this.lancement.start();
+
     }
 
 
@@ -91,6 +92,13 @@ public class Serveur implements Runnable {
                     }
                     // Traite le packet reçu
                     traiterPacket(packet);
+                    if(listeClients.size() == 2 && morpion == null){
+                        commencerJeuContreJoueur(listeClients.get(0), listeClients.get(1));
+                        // Envoi du packet de début de partie
+                        String messageDebut = "/d/";
+                        envoyer(messageDebut.getBytes());
+                    }
+
                 }
             }
         };
@@ -108,18 +116,15 @@ public class Serveur implements Runnable {
         // Réception du packet de connexion
         if(messageRecu.startsWith("/c/")){
             // Ajout du client à la liste
-            Joueur j = new Joueur(messageRecu.substring(3), packet.getAddress(), packet.getPort());
-            listeClients.add(j);
 
-            // Commence la partie contre le serveur lorsque le joueur rejoint la partie
-            String donnees = this.commencerJeuContreServeur(j);
-            // Envoi du packet de début de partie
-            String messageDebut = "/d/";
-            this.envoyer(messageDebut.getBytes());
+            if(listeClients.size() < 2) {
+                System.out.println("test liste ");
+                Joueur j = new Joueur(messageRecu.substring(3), packet.getAddress(), packet.getPort());
+                listeClients.add(j);
 
-            // Envoi des positions s'il s'agit du serveur qui commence à jouer
-            String messagePosition = "/p/" + donnees;
-            this.envoyer(messagePosition.getBytes());
+            }else if(listeClients.size() == 2){
+                System.out.println("il y a trop de monde");
+            }
 
         }
 
@@ -131,6 +136,7 @@ public class Serveur implements Runnable {
 
     }
 
+
     /**
      * Action lorsqu'un packet contenant la position est reçue
      * @param packet
@@ -138,7 +144,11 @@ public class Serveur implements Runnable {
      */
     public void actionPositionServeur(DatagramPacket packet, String messageSansControle){
 
-        if(this.morpion.estValideEmplacement(messageSansControle)){
+        if( this.morpion.estValideEmplacement(messageSansControle) &&
+            this.morpion.getJoueurEnCours().getAdresse().equals(packet.getAddress()) &&
+            this.morpion.getJoueurEnCours().getPort() == packet.getPort()
+        ){
+
             String messagePosition;
             String messageFinPartie;
 
@@ -148,7 +158,19 @@ public class Serveur implements Runnable {
             messagePosition = "/p/" + symbole + ":" + messageSansControle;
             this.envoyer(messagePosition.getBytes());
 
-            // Serveur joue
+            if(this.morpion.estFiniePartie()){
+                if(this.morpion.getVainqueur().getPseudo() == null)
+                    messageFinPartie = "/f/" + "egalite";
+                else {
+                    // On applique l'autre joueur comme vainqueur étant donné que le partie se termine lorsque le joueur précédent a gagné
+                    this.morpion.setVainqueur(this.morpion.getJoueurs().getAutreJoueur(this.morpion.getVainqueur()));
+                    messageFinPartie = "/f/" + this.morpion.getVainqueur().getPseudo();
+                }
+                this.envoyer(messageFinPartie.getBytes());
+            }
+
+
+            /*// Serveur joue
             if(!this.morpion.estFiniePartie()){
 
                 String donnees = this.serveurJoue();
@@ -180,6 +202,7 @@ public class Serveur implements Runnable {
 
                 this.envoyer(messageFinPartie.getBytes());
             }
+            */
         }
         else{
             String messageInvalide = "/e/" + "impo";
@@ -241,6 +264,16 @@ public class Serveur implements Runnable {
         }else{
             return "";
         }
+    }
+
+    /**
+     * Commence la partie avec un autre joueur
+     * @param joueur1
+     * @param joueur2
+     */
+    public void commencerJeuContreJoueur(Joueur joueur1, Joueur joueur2){
+        PaireJoueurs paireJoueurs = new PaireJoueurs(joueur1, joueur2);
+        this.morpion = new Morpion(paireJoueurs);
     }
 
     /**
